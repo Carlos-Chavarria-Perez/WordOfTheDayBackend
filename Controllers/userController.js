@@ -10,7 +10,7 @@ export const registerUser = async (req, res) => {
     if (!username || !password) {
       return res.status(400).json({ error: "Username and Password Requiered" });
     }
-    // TODO add special character to avoid having to change password hacerlo con 16 poner que no se puede recuperar? special character 
+    // TODO add special character to avoid having to change password hacerlo con 16 poner que no se puede recuperar? special character
     if (password.length < 6) {
       return res
         .status(400)
@@ -48,6 +48,8 @@ export const registerUser = async (req, res) => {
 export const loginUser = async (req, res) => {
   try {
     const { username, password } = req.body;
+    console.log("🔵 Login attempt for username:", username);
+
     // Validate Inputs
     if (!username || !password) {
       return res.status(400).json({ error: "Username and password requiered" });
@@ -59,31 +61,40 @@ export const loginUser = async (req, res) => {
       [username],
     );
     if (result.rows.length === 0) {
+      console.log("⚠️ User not found:", username);
       return res.status(401).json({ error: "Invalid credentials" });
     }
     const user = result.rows[0];
-    
-        // Compare passwords
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-          return res.status(401).json({ error: "Invalid credentials" });
-        }
+    console.log("🔵 User found:", user.username);
 
-        // 🔐 CREATE TOKEN
+    // Compare passwords
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      console.log("⚠️ Password does not match for user:", username);
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    console.log("🔵 Password matched, creating token...");
+    // 🔐 CREATE TOKEN
     const token = jwt.sign(
-      { user_id: user.user_id,username:user.username },
+      { user_id: user.user_id, username: user.username },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
 
+    console.log("🔵 Token created, updating database...");
     // store session token
 
-    await pool.query(`
+    await pool.query(
+      `
       UPDATE t_users
       SET current_token =$1
       WHERE user_id= $2
-      `, [token, user.user_id])
+      `,
+      [token, user.user_id],
+    );
 
+    console.log("✅ Login successful for user:", username);
     res.status(200).json({
       message: "Login successful",
       token,
@@ -93,8 +104,10 @@ export const loginUser = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("❌ Login error:", error.message);
+    console.error("❌ Full error:", error);
     res.status(500).json({ error: "Server error during login" });
   }
 };
 
-// TODO Create reset password fucntion 
+// TODO Create reset password fucntion
