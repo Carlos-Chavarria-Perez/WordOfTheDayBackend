@@ -140,7 +140,7 @@ export const GameDetails = async (req, res) => {
 
         const gameResult = await pool.query(
       `
-      SELECT invite_code
+      SELECT invite_code,game_name
       FROM t_games
       WHERE id = $1
       `,
@@ -151,6 +151,7 @@ export const GameDetails = async (req, res) => {
       return res.status(404).json({ error: "Game not found" });
     }
     const inviteCode = gameResult.rows[0].invite_code;
+    const gamename = gameResult.rows[0].game_name;
 
     const players = await pool.query(
       `
@@ -167,7 +168,8 @@ export const GameDetails = async (req, res) => {
       game_id: id,
       is_word_chooser: iswordChooser,
       players: players.rows,
-      invite_code:inviteCode
+      invite_code:inviteCode,
+      game_name: gamename
     });
   } catch (error) {
     return res.status(500).json({ error: "Failed to load game" });

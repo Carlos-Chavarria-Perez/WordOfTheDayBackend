@@ -14,6 +14,14 @@ export function registerRoomSocket(io) {
 
     console.log("✅ Socket connected", socket.id, "User:", user_id);
 
+    socket.on("error", (error) => {
+      console.error("Socket error for", socket.id, ":", error);
+    });
+
+    socket.on("connect_error", (error) => {
+      console.error("Socket connect error for", socket.id, ":", error);
+    });
+
     // Join Room
     socket.on("room:join", ({ roomId, isChooser }) => {
       // <--- Receive isChooser
@@ -39,8 +47,6 @@ export function registerRoomSocket(io) {
       }
 
       socket.join(roomId);
-
-
 
       io.to(roomId).emit("room:updated", room);
 
