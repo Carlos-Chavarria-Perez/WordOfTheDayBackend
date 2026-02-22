@@ -10,9 +10,16 @@ export const createSentence = async (req, res) => {
     await client.query("BEGIN");
     const result = await client.query(
       `
-            INSERT INTO t_submitted_sentences(game_id,user_id,sentence)
-            VALUES($1, $2, $3)
-            RETURNING *
+        WITH inserted AS (
+          INSERT INTO t_submitted_sentences(game_id, user_id, sentence)
+          VALUES ($1, $2, $3)
+          RETURNING *
+        )
+        SELECT 
+          inserted.*,
+          u.username
+        FROM inserted
+        JOIN t_users u ON u.user_id = inserted.user_id
             `,
       [game_id, user_id, sentence],
     );
