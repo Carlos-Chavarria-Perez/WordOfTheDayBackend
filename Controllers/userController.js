@@ -48,7 +48,6 @@ export const registerUser = async (req, res) => {
 export const loginUser = async (req, res) => {
   try {
     const { username, password } = req.body;
-    console.log("🔵 Login attempt for username:", username);
 
     // Validate Inputs
     if (!username || !password) {
@@ -61,20 +60,16 @@ export const loginUser = async (req, res) => {
       [username],
     );
     if (result.rows.length === 0) {
-      console.log("⚠️ User not found:", username);
       return res.status(401).json({ error: "Invalid credentials" });
     }
     const user = result.rows[0];
-    console.log("🔵 User found:", user.username);
 
     // Compare passwords
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      console.log("⚠️ Password does not match for user:", username);
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    console.log("🔵 Password matched, creating token...");
     // 🔐 CREATE TOKEN
     const token = jwt.sign(
       { user_id: user.user_id, username: user.username },
@@ -82,7 +77,6 @@ export const loginUser = async (req, res) => {
       { expiresIn: "7d" },
     );
 
-    console.log("🔵 Token created, updating database...");
     // store session token
 
     await pool.query(
@@ -94,7 +88,6 @@ export const loginUser = async (req, res) => {
       [token, user.user_id],
     );
 
-    console.log("✅ Login successful for user:", username);
     res.status(200).json({
       message: "Login successful",
       token,
@@ -104,8 +97,6 @@ export const loginUser = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("❌ Login error:", error.message);
-    console.error("❌ Full error:", error);
     res.status(500).json({ error: "Server error during login" });
   }
 };

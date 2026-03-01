@@ -63,20 +63,22 @@ export const reviewSentence = async (req, res) => {
   const client = await pool.connect();
 
   try {
-    const { game_id, sentence_owner_id, approved, points } = req.body;
+    const { game_id, sentence_owner_id, approved, points, review_comment } = req.body;
 
     const safePoints = Math.max(0, Math.min(points ?? 0, 100));
+
+    const cleanComment= review_comment && review_comment.trim() !==""? review_comment.trim(): null
 
     await client.query("BEGIN");
 
     const sentenceResult = await client.query(
       `
       UPDATE t_submitted_sentences
-      SET approved= $3
+      SET approved= $3,review_comment=$4
       WHERE game_id= $1 AND user_id= $2
       RETURNING *
       `,
-      [game_id, sentence_owner_id, approved],
+      [game_id, sentence_owner_id, approved, cleanComment],
     );
 
     const updatedSentence = sentenceResult.rows[0];
@@ -115,6 +117,7 @@ export const reviewSentence = async (req, res) => {
       user_id: sentence_owner_id,
       approved,
       points: safePoints,
+      review_comment:cleanComment
     });
 
     // ✅ leaderboard update
